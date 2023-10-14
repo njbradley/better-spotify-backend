@@ -17,12 +17,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from django.http import HttpResponse
-
-def index(request):
-    import random
-    return HttpResponse("Hello, world. You're at the polls index." + str(random.randint(0,101)))
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
