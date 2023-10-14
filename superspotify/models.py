@@ -7,16 +7,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 
 
-class MusicBackend:
-
-    def play(song: Song, start_time: int):
-        
-
-    def pause() -> (Song, int):
-
-    def setCallback(callback)
-
-
 class Song(models.Model):
     uid = models.CharField()
     name = models.CharField(max_length=127)
