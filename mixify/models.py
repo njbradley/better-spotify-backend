@@ -42,7 +42,7 @@ class MusicBackend(models.Model):
     def pause():
         pass
 
-    def state() -> (Song, int, int):
+    def state() -> (Song, int):
         pass
 
     def search():
