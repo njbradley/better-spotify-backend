@@ -1,5 +1,9 @@
 from rest_framework.response import Response as RestResponse
 from rest_framework.decorators import api_view
+from rest_framework.views import api_view
+from rest_framework.response import RestResponse
+from .models import Tag
+from .models import TaggedSong
 
 @api_view()
 def play(request):
@@ -18,7 +22,13 @@ def pause(request):
 
 @api_view()
 def status(request):
-    backend = request.user.getMusicBackend()
-    song, curpos, duration = backend.currentState()
-    return RestResponse({"song": song.uid, "position": curpos, "duration": duration})
+  return 
 
+
+def create_tag(request):
+  tag = Tag(request.user, request.data["tag_name"])
+  tag.save()
+
+def add_tag_son(request):
+  tag_song = TaggedSong(request.data["tag"], request.data["song"])
+  tag_song.save()
