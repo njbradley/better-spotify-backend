@@ -16,11 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.authtoken.views import obtain_auth_token
 from . import apis, views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
+    
+    #path('api/login/', apis.login_api),
+    path('api/login/', obtain_auth_token)
 
     path("api/playback/play", apis.play),
     path("api/playback/pause", apis.pause),
@@ -39,7 +43,7 @@ urlpatterns = [
 
     path("spotify/", include("spotify_backend.urls")),
 
-    path("", views.homepage),
+    path('<path>', frontend),
 
     #path("api/tags/", apis.tags),
     #path("api/tags/<tagid>", apis.tags),
