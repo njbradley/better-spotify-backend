@@ -22,5 +22,27 @@ class TaggedSong(models.Model):
 
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=127)
+    musicBackends = [SpotifyBackend]
 
+    def getMusicBackend(self):
+        for backend in self.musicBackends:
+            pass
+
+class MusicBackend(models.Model):
+    user = model.ForeignKey(CustomUser)
+
+    def login(user):
+        pass
+
+    def play(song: Song, start_time: int):
+        pass
+
+    def pause():
+        pass
+
+    def currentState() -> (Song, int):
+        pass
+    
+    class Meta:
+        abstract = False
 
