@@ -4,6 +4,13 @@ from .models import Tag
 from .models import TaggedSong
 import requests
 
+import redis
+
+r = redis.Redis(
+  host='redis-11191.c27688.us-east-1-mz.ec2.cloud.rlrcp.com',
+  port=11191,
+  password='8tqBgsB0gBKeGaexEmq4RhLWMe2Pnzqg')
+
 @api_view()
 def play(request):
   backend = request.user.getMusicBackend()
@@ -56,18 +63,5 @@ def get_playlist_details(request):
 # print(playlist_details)
 
 # get name, id, and uri
-def search_spotify(query, token, type="track", limit=10):
-    base_url = "https://api.spotify.com/v1/search"
-    
-    params = {
-        "q": query,
-        "type": type,
-        "limit": limit
-    }
-    
-    response = self.oauth.get(base_url, params=params)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        response.raise_for_status()
+def tag_search(uid):
+  
