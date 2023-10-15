@@ -24,9 +24,11 @@ class CustomUser(AbstractUser):
     username = models.CharField(max_length=127)
     musicBackends = [SpotifyBackend]
 
-    def getMusicBackend(self):
+    def getMusicBackend(self, user):
         for backend in self.musicBackends:
-            pass
+            query = backend.objects.filter(user=user)
+            if query.count() != 0:
+                return backend
 
 class MusicBackend(models.Model):
     user = model.ForeignKey(CustomUser)
