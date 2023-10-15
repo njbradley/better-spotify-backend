@@ -5,12 +5,6 @@ from .models import TaggedSong
 from .models import Song
 import requests
 
-#import redis
-
-#r = redis.Redis(
-  #host='redis-11191.c27688.us-east-1-mz.ec2.cloud.rlrcp.com',
-  #port=11191,
-  #password='8tqBgsB0gBKeGaexEmq4RhLWMe2Pnzqg')
 
 @api_view(http_method_names=['POST'])
 def play(request):
@@ -31,18 +25,77 @@ def pause(request):
   return RestResponse({"status": "success"})
 
 @api_view(http_method_names=['GET'])
-def status(request):
-  song, curpos, duration = request.user.getMusicBackend().currentState()
-  return RestResponse({"song": song.uid, "position": curpos, "duration": duration})
+def state(request):
+  song, curpos = request.user.getMusicBackend().state()
+  return RestResponse({"song": song.uid, "position": curpos, "duration": song.duration})
 
 
-def create_tag(request):
-  tag = Tag(request.user, request.data["tag_name"])
-  tag.save()
+@api_view(http_method_names=['GET', 'POST', 'PUT', 'DELETE'])
+def tagApi(request, name=None, id=None):
+    if name is not None:
+        tag = Tag.objects.get(user=request.user, name=name)
+    if id is not None:
+        tag = Tag.objects.get(id=id)
 
-def create_tagged_song(request):
-  tag_song = TaggedSong(request.data["tag"], request.data["song"])
-  tag_song.save()
+    songs = None
+    if 'song' in request.data:
+        songs = [Song.objects.get(uid=request.data['uid'])]
+    if 'songs' in request.data:
+        songs = [Song.objects.get(uid=uid) for uid in request.data['songs']]
+
+    if request.method == 'GET':
+        songs = TaggedSong.objects.filter(tag=tag).values_list('song').values()
+        return RestResponse(list(songs))
+
+    if request.method == 'POST':
+        pass
+
+
+
+@api_view(http_method_names=['PUT'])
+def createTag(request):
+    query = Tag.objects.filter(user=request.user, name=request.data['name'])
+    if query.count() == 0:
+        tag = Tag(request.user, request.data["name"])
+        tag.save()
+        return RestResponse({"status": "success"})
+
+    return RestResponse({"status": "unchanged"})
+
+@api_view(http_method_names=['PUT'])
+def addTag(request):
+  tag = Tag.objects.get(user=request.user, name=request.data['tag'])
+  song = Song.objects.get(uid=request.data['song'])
+  query = TaggedSong.filter(tag=tag, song=song)
+
+  if query.count() == 0:
+      tag_song = TaggedSong(tag=tag, song=song)
+      tag_song.save()
+      return RestResponse({"status": "success"})
+
+  return RestResponse({"status": "unchanged"})
+
+@api_view(http_method_names=['DELETE'])
+def removeTag(request):
+  tag = Tag.objects.get(user=request.user, name=request.data['tag'])
+  song = Song.objects.get(uid=request.data['song'])
+  query = TaggedSong.filter(tag=tag, song=song)
+
+  if query.count() == 0:
+      tag_song = TaggedSong(tag=tag, song=song)
+      tag_song.save()
+      return RestResponse({"status": "success"})
+
+  return RestResponse({"status": "unchanged"})
+
+@api_view(http_method_names=['GET'])
+def getTag(request):
+    if 'id' in request.data:
+        tag = Tag.get(id=request.data['id'])
+    else:
+        tag = Tag.get(user=request.user, name=request.data['name'])
+    songs = TaggedSong.objects.filter(tag=tag).values_list('song').values()
+    return RestResponse({'id': tag.id, 'name': name, 'songs': songs})
 
 # get all songs with tag
 # get tag from user

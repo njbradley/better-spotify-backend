@@ -99,7 +99,7 @@ class SpotifyBackend(MusicBackend):
             response.raise_for_status()
 
     # Get Playback state returns -> (song, curr_pos, duration)
-    def currentState(self) -> (Song, int, int):
+    def state(self) -> (Song, int):
         api_url = "https://api.spotify.com/v1/me/player/currently-playing"
 
         response = self.oauth.get(api_url)
@@ -114,6 +114,13 @@ class SpotifyBackend(MusicBackend):
         else:
             response.raise_for_status()
 
+    def trackObjToSong(track):
+        name, artist = track['name'], track['artists'][0]['name']
+        params = dict(
+            duration=track['duration'],
+            album_art=track['album']['images'][-1]['url'],
+        )
+        return reverseLookupSong(track['id'], name, artist, params)
     
     # Looks up for song in SpotifySong database.
     # If found, then return SpotifySong database entry(each song is unique).
@@ -143,8 +150,6 @@ class SpotifyBackend(MusicBackend):
             if json['tracks']['total'] > 0:
                 tracks = json['tracks']['items']
                 spotify_id = tracks[0]['id']
-                print (tracks)
-                print (spotify_id)
                 return SpotifySong.objects.create(song=song, spotify_id=spotify_id)
         else:
             response.raise_for_status()
@@ -188,32 +193,30 @@ class SpotifyBackend(MusicBackend):
         songs = []
 
         for track in tracks:
-            name, artist = track['name'], track['artists'][0]['name']
-            params = dict(
-                duration=track['duration'],
-                album_art=track['album']['images'][-1]['url'],
-            )
-
-            song = reverseLookupSong(track['id'], name, artist, params)
-            songs.append(song)
+            songs.append(trackObjToSong(track))
 
         playlists = json['playlists']['items']
         out_playlists = []
 
         for playlist in playlists:
-            out_playlists.append(dict(
-                collaborative=playlist['collaborative'],
-                description=playlist['collabroative'],
-                image=playlist['image'],
-                name=playlist['name'],
-                owner=dict(
-                    username=self.user.username,
-                    isFriend=False,
-                    profileUri=None,
-                    uuid=self.user.id,
-                ),
-            ))
+            out_playlists.append(self.reformatPlaylistObj(playlist))
 
         return songs, out_playlists
 
+    def reformatPlaylistObj(playlist):
+        return dict(
+            collaborative=playlist['collaborative'],
+            description=playlist['collabroative'],
+            image=playlist['image'],
+            name=playlist['name'],
+            owner=dict(
+                username=self.user.username,
+                isFriend=False,
+                profileUri=None,
+                uuid=self.user.id,
+            ),
+        )
+
+    def listPlaylists():
+        pass
 
