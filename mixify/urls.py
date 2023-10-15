@@ -33,9 +33,8 @@ urlpatterns = [
     path("api/playback/state", apis.state),
     
     path("api/search", apis.search),
-
-    #path("api/userTags", apis.getUserTags)
-    #path("api/userSongs", apis.getUserSongs)
+    path("api/listSongs", apis.getUserSongs),
+    path("api/listTags", apis.getUserTags),
 
     #path("api/tags", apis.getTag),
     #path("api/tag/list", apis.getTag),

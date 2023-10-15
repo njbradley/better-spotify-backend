@@ -173,7 +173,7 @@ def getTag(request):
 
 @api_view(http_method_names=['GET'])
 def getUserTags(request):
-  tag_names = Tag.objects.filter(user=requests.user).values('name')
+  tag_names = Tag.objects.filter(user=request.user).values('name')
   result = []
   for i in len(tag_names):
     result.append({})
@@ -184,21 +184,26 @@ def getUserTags(request):
 
 @api_view(http_method_names=['GET'])
 def getUserSongs(request):
-  tags = Tag.objects.filter(user=requests.user)
+  tags = Tag.objects.filter(user=request.user)
   user_songs = TaggedSong.objects.filter(tag=tags[0])
   for i in range(1, tags.count()):
     user_songs = user_songs | TaggedSong.objects.filter(tag=tags[i])
 
-  songs = user_songs.values("song")
+  print (user_songs)
+  #songs = user_songs.values("song")
+  songs = user_songs
+  print (songs)
   result = []
-  for i in len(songs):
+  for i in range(len(songs)):
+    print (songs[i])
+    song = songs[i].song
     result.append({})
-    result[i]['albumArt'] = songs[i]['song'].album_art
-    result[i]['artistsNames'] = [songs[i]['song'].artist]
-    result[i]['duration'] = songs[i]['song'].duration
+    result[i]['albumArt'] = song.album_art
+    result[i]['artistsNames'] = [song.artist]
+    result[i]['duration'] = song.duration
     result[i]['playable'] = True
-    result[i]['name'] = songs[i]['song'].name
-    result[i]['uuid'] = songs[i]['song'].uid
+    result[i]['name'] = song.name
+    result[i]['uuid'] = song.uid
   
   return RestResponse({'tracks': result, 'numTracks': len(result)})
 
@@ -215,7 +220,7 @@ def get_playlist_details(request):
         "Authorization": f"Bearer {token}"
     }
 
-    response = requests.get(url, headers=headers)
+    response = request.get(url, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
