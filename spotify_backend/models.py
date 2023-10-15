@@ -16,6 +16,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 class SpotifyBackend(MusicBackend):
     token = models.JSONField(null=True)
     state = models.CharField(max_length=16, null=True)
+    lastDevice = models.CharField(max_length=127, null=True)
 
     authorize_url = 'https://accounts.spotify.com/authorize'
     token_url = 'https://accounts.spotify.com/api/token'
@@ -73,12 +74,17 @@ class SpotifyBackend(MusicBackend):
     # Sends song duration to 
     def play(self, song: Song, start_time: int):
         api_url = "https://api.spotify.com/v1/me/player/play"
+        
+        params = {}
+        if self.lastDevice is not None:
+            params = dict(device_id=self.lastDevice)
+
         uri = "spotify:track:" + self.lookupSong(song).spotify_id
         request_body = {
             "uris": [uri],
             "position_ms": start_time
         }
-        response = self.oauth.put(api_url, json=request_body)
+        response = self.oauth.put(api_url, json=request_body, params=params)
         status_code = response.status_code
         if status_code != 204:
             response.raise_for_status()
@@ -101,9 +107,23 @@ class SpotifyBackend(MusicBackend):
         if response.status_code == 200:
             # Device currently active
             json = response.json()
+            self.save()
             curr_pos_ms = int(json["progress_ms"])
             duration_ms = int(json["item"]["duration_ms"])
             spotify_song = SpotifySong.objects.get(spotify_id=json['item']['id'])
+
+            if 'device' in json:
+                self.lastDevice = json["device"]["id"]
+            else:
+                response2 = self.oauth.get("https://api.spotify.com/v1/me/player/devices")
+                if response.status_code == 200:
+                    json = response2.json()
+                    for device in json['devices']:
+                        if device['is_active']:
+                            self.lastDevice = device['id']
+                            self.save()
+                            break
+
             return (spotify_song.song, curr_pos_ms, duration_ms)
         else:
             response.raise_for_status()

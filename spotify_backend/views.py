@@ -8,7 +8,11 @@ def login(request):
 
     if current_backend is not None:
         #print (current_backend.token)
-        return HttpResponseRedirect('/')
+        if current_backend.token is None:
+            current_backend.delete()
+        else:
+            return HttpResponse("skdfjlsd")
+            #return HttpResponseRedirect('/')
 
     backend = SpotifyBackend(user=user)
     redirect_url = backend.login('http://127.0.0.1:8000' + reverse('spotify-callback'))

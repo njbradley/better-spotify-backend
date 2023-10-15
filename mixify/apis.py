@@ -29,6 +29,7 @@ def play(request):
   print (id)
   song = Song.objects.get(uid = id)
   backend.play(song, pos)
+  backend.state()
   return RestResponse({"status": "success"})
 
 @api_view(http_method_names=['PUT'])
