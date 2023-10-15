@@ -4,6 +4,7 @@ from rest_framework.views import api_view
 from rest_framework.response import RestResponse
 from .models import Tag
 from .models import TaggedSong
+import requests
 
 @api_view()
 def play(request):
@@ -32,3 +33,43 @@ def create_tag(request):
 def add_tag_son(request):
   tag_song = TaggedSong(request.data["tag"], request.data["song"])
   tag_song.save()
+
+# get all songs with tag
+# get tag from user
+
+def get_playlist_details(request):
+    user_id = "Our user ID"
+    playlist_id = "YOUR_PLAYLIST_ID"
+    token = "YOUR_OAUTH_TOKEN"
+    url = f"https://api.spotify.com/{user_id}/playlists/{playlist_id}"
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
+
+# # Usage
+# playlist_details = get_playlist_details(playlist_id, token)
+# print(playlist_details)
+
+# get name, id, and uri
+def search_spotify(query, token, type="track", limit=10):
+    base_url = "https://api.spotify.com/v1/search"
+    
+    params = {
+        "q": query,
+        "type": type,
+        "limit": limit
+    }
+    
+    response = self.oauth.get(base_url, params=params)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()

@@ -48,5 +48,3 @@ class SpotifyBackend(MusicBackend):
 
     def authenticateToken():
         pass
-
-    
