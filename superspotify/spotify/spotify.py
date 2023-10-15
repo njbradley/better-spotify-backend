@@ -128,3 +128,6 @@ class SpotifyBackend(MusicBackend):
             return response.json()
         else:
             response.raise_for_status()
+
+
+    def 
