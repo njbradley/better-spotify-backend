@@ -1,0 +1,3 @@
+[submodule "static/mixify"]
+	path = static/mixify
+	url = https://github.com/StefanTodoran/mixify.git
