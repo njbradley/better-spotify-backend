@@ -22,7 +22,6 @@ class TaggedSong(models.Model):
 
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=127)
-    musicBackends = [SpotifyBackend]
 
     def getMusicBackend(self, user):
         for backend in self.musicBackends:
