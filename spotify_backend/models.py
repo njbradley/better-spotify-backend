@@ -34,7 +34,6 @@ class SpotifyBackend(MusicBackend):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
         self.state = secrets.token_hex(8)
-        print (callback_url)
 
         oauth = OAuth2Session(client_id, redirect_uri=callback_url, scope=self.scope)
         auth_url, state = oauth.authorization_url(self.authorize_url, state=self.state)
@@ -57,15 +56,10 @@ class SpotifyBackend(MusicBackend):
         self.oauth = self.get_oauth()
     
     def get_oauth(self):
-        print ('gettting oath')
-        print ('ksdjflskdjfls')
-        print (self.token)
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
     
         def save_token(token):
-            print ('saving token')
-            print (token)
             self.token = token
             self.save()
 
@@ -139,19 +133,13 @@ class SpotifyBackend(MusicBackend):
         api_url = "https://api.spotify.com/v1/search"
         #params = {"q": {"artist": artist, "track": track}}
         params = {"q": artist + ' ' + track, 'type': 'track'}
-        print (params)
         response = self.oauth.get(api_url, params=params)
         status_code = response.status_code
-        print (status_code)
-        print (response.json())
         if status_code == 200:
             json = response.json()
-            print (json)
             if json['tracks']['total'] > 0:
                 tracks = json['tracks']['items']
                 spotify_id = tracks[0]['id']
-                print (tracks)
-                print (spotify_id)
                 return SpotifySong.objects.create(song=song, spotify_id=spotify_id)
         else:
             response.raise_for_status()
@@ -169,14 +157,13 @@ class SpotifyBackend(MusicBackend):
             spotifySong.save()
             return spotifySong.song
 
-        song = Song(uid=name+'__'+artist, name=name, artist=artist)
+        song = Song(uid=name+'__'+artist, name=name, artist=artist, **params)
         song.save()
         spotifySong = SpotifySong(song=song, spotify_id=spotify_id)
         spotifySong.save()
         return song
 
     def getBestArt(self, images):
-        print (images)
         if len(images) == 0: return None
         index = 0
         while (index < len(images)-1 and images[index]['height'] is not None and images[index]['width'] is not None
@@ -207,11 +194,11 @@ class SpotifyBackend(MusicBackend):
         for track in tracks:
             name, artist = track['name'], track['artists'][0]['name']
             params = dict(
-                duration=track['duration'],
+                duration=track['duration_ms'],
                 album_art=track['album']['images'][-1]['url'],
             )
 
-            song = reverseLookupSong(track['id'], name, artist, params)
+            song = self.reverseLookupSong(track['id'], name, artist, params)
             songs.append(song)
 
         playlists = json['playlists']['items']
@@ -220,8 +207,8 @@ class SpotifyBackend(MusicBackend):
         for playlist in playlists:
             out_playlists.append(dict(
                 collaborative=playlist['collaborative'],
-                description=playlist['collabroative'],
-                image=playlist['image'],
+                description=playlist['description'],
+                image=self.getBestArt(playlist['images']),
                 name=playlist['name'],
                 owner=dict(
                     username=self.user.username,

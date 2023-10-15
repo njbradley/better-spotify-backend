@@ -7,8 +7,8 @@ def login(request):
     current_backend = user.getMusicBackend()
 
     if current_backend is not None:
-        print (current_backend.token)
-        return HttpResponse("You are already signed into spotify. Redirecting you back")
+        #print (current_backend.token)
+        return HttpResponseRedirect('/')
 
     backend = SpotifyBackend(user=user)
     redirect_url = backend.login('http://127.0.0.1:8000' + reverse('spotify-callback'))
@@ -21,6 +21,6 @@ def loginCallback(request):
     
     callback_url = 'http://127.0.0.1:8000' + reverse('spotify-callback')
     backend.loginCallback(callback_url, request.build_absolute_uri())
-    return HttpResponse('logged in!')
+    return HttpResponseRedirect('/')
 
 
