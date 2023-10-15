@@ -1,5 +1,7 @@
 from rest_framework.response import Response as RestResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from .models import Tag
 from .models import TaggedSong
 from .models import Song
@@ -104,6 +106,8 @@ def addTag(request):
   return RestResponse({"status": "unchanged"})
 
 @api_view(http_method_names=['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def search(request):
   query = request.data['query']
   songs, playlists = request.user.getMusicBackend().search(query)
