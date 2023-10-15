@@ -26,10 +26,7 @@ def play(request):
   # request.playback is timing
   id = request.data["song"]
   pos = request.data["position"]
-  print (id)
   song = Song.objects.get(uid = id)
-  backend.play(song, pos)
-  backend.state()
   return RestResponse({"status": "success"})
 
 @api_view(http_method_names=['PUT'])
@@ -194,12 +191,11 @@ def getUserSongs(request):
 
   print (user_songs)
   #songs = user_songs.values("song")
-  songs = user_songs
+  songs = list(set(song.song for song in user_songs))
   print (songs)
   result = []
   for i in range(len(songs)):
-    print (songs[i])
-    song = songs[i].song
+    song = songs[i]
     result.append({})
     result[i]['albumArt'] = song.album_art
     result[i]['artistNames'] = [song.artist]
@@ -207,8 +203,16 @@ def getUserSongs(request):
     result[i]['playable'] = True
     result[i]['name'] = song.name
     result[i]['uuid'] = song.uid
+    result[i]['tags'] = [ts.tag.id for ts in TaggedSong.objects.filter(song=song)]
+
+  tag_names = Tag.objects.filter(user=request.user)
+  tags_result = []
+  for i in range(len(tag_names)):
+    tags_result.append({})
+    tags_result[i]['name'] = tag_names[i].name
+    tags_result[i]['uuid'] = tag_names[i].id
   
-  return RestResponse({'tracks': result, 'numTracks': len(result)})
+  return RestResponse({'tracks': result, 'numTracks': len(result), 'tags': tags_result, 'numTags': len(tags)})
 
 # get all songs with tag
 # get tag from user

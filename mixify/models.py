@@ -30,9 +30,15 @@ class Tag(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=127)
 
+    def __str__(self):
+        return "Tag " + self.user.username + " " + self.name
+
 class TaggedSong(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
     song = models.ForeignKey(Song, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "TaggedSong " + self.tag.user.username + " " + self.tag.name + " " + self.song.uid
 
 
 class MusicBackend(models.Model):
