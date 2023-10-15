@@ -22,11 +22,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
 
-    path("api/playback/play", apis.play)
-    path("api/playback/pause", apis.pause)
-    path("api/playback/status", apis.status)
+    path("api/playback/play", apis.play),
+    path("api/playback/pause", apis.pause),
+    path("api/playback/status", apis.status),
 
-    path("api/tags/", apis.tags)
-    path("api/tags/<tagid>", apis.tags)
-    path("api/query", apis.query)
+    path("api/tags/", apis.tags),
+    path("api/tags/<tagid>", apis.tags),
+    path("api/query", apis.query),
 ]
