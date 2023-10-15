@@ -214,8 +214,28 @@ class SpotifyBackend(MusicBackend):
                 result_list.append({})
                 result_list[i]['collaborative'] = False
                 result_list[i]['description'] = json['items'][i]['description']
-                result_list[i]['image'] = json['items'][i]['description']
-                result_list[i]['description'] = json['items'][i]['description']
-                result_list[i]['description'] = json['items'][i]['description']
-
+                result_list[i]['image'] = self.getBestArt(json['items'][i]['images'])
+                result_list[i]['name'] = json['items'][i]['name']
+                result_list[i]['owner'] = json['items'][i]['owner']
+                result_list[i]['uuid'] = json['items'][i]['id']
         
+            return result_list
+
+    
+    # Takes in a playlists and import them.
+    def importPlaylist(self, playlists):
+        for i in range(len(playlists)):
+            p = playlists[i]
+            p_id = p['uuid']
+            api_url = f"https://api.spotify.com/v1/playlists/{p_id}"
+            response = self.oauth.get(api_url)
+            if response.status_code != 200:
+                response.raise_for_status()
+            else:
+                tracks = response.json()['tracks']
+                for playlist_track_obj in tracks['items']:
+                    track_obj = playlist_track_obj['track']
+                    id = track_obj['id']
+                    name = track_obj['name']
+                    artist = track_obj['artists'][0]['name']
+                    self.reverseLookupSong(self, id, name, artist)
