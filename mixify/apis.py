@@ -45,7 +45,11 @@ def tagApi(request, name=None, id=None):
     if name is not None:
         query = Tag.objects.filter(user=request.user, name=name)
         if query.count() == 0:
+            if request.method == 'GET':
+                return RestResponse({"error": "tag not found"}, 404)
             tag = Tag.objects.create(user=request.user, name=name)
+        else:
+            tag = query[0]
     if id is not None:
         tag = Tag.objects.get(id=id)
 
@@ -74,6 +78,7 @@ def tagApi(request, name=None, id=None):
         else:
             for song in songs:
                 TaggedSong.objects.filter(tag=tag, song=song).delete()
+    return RestResponse({"status": "success"})
 
 
 @api_view(http_method_names=['PUT'])
