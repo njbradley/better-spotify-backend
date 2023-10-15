@@ -33,7 +33,7 @@ class SpotifyBackend(MusicBackend):
     def login(self, callback_url):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
-        self.state = secrets.token_hex(16)
+        self.state = secrets.token_hex(8)
         print (callback_url)
 
         oauth = OAuth2Session(client_id, redirect_uri=callback_url, scope=self.scope)
@@ -99,7 +99,7 @@ class SpotifyBackend(MusicBackend):
             response.raise_for_status()
 
     # Get Playback state returns -> (song, curr_pos, duration)
-    def currentState(self) -> (Song, int, int):
+    def state(self) -> (Song, int):
         api_url = "https://api.spotify.com/v1/me/player/currently-playing"
 
         response = self.oauth.get(api_url)
@@ -114,6 +114,13 @@ class SpotifyBackend(MusicBackend):
         else:
             response.raise_for_status()
 
+    def trackObjToSong(self, track):
+        name, artist = track['name'], track['artists'][0]['name']
+        params = dict(
+            duration=track['duration_ms'],
+            album_art=self.getBestArt(track['album']['images']),
+        )
+        return self.reverseLookupSong(track['id'], name, artist, params)
     
     # Looks up for song in SpotifySong database.
     # If found, then return SpotifySong database entry(each song is unique).
@@ -151,7 +158,7 @@ class SpotifyBackend(MusicBackend):
 
         return None
 
-    def reverseLookupSong(spotify_id, name, artist, album_art=None):
+    def reverseLookupSong(self, spotify_id, name, artist, params):
         query = SpotifySong.objects.filter(spotify_id=spotify_id)
         if query.count() > 0:
             return query[0].song
@@ -168,20 +175,29 @@ class SpotifyBackend(MusicBackend):
         spotifySong.save()
         return song
 
-    def search_spotify(self, query, token, type="track", limit=10):
+    def getBestArt(self, images):
+        print (images)
+        if len(images) == 0: return None
+        index = 0
+        while (index < len(images)-1 and images[index]['height'] is not None and images[index]['width'] is not None
+                and images[index]['width'] > 300 and images[index]['height'] > 300):
+            index += 1
+        
+        return images[index]['url']
+
+    def search(self, query, page=0, pagesize=20):
         base_url = "https://api.spotify.com/v1/search"
         
         params = {
             "q": query,
-            "type": type,
-            "limit": limit
+            "type": 'track,playlist',
+            "limit": pagesize,
+            "offset": page * pagesize,
         }
         
         response = self.oauth.get(base_url, params=params)
 
-        if response.status_code == 200:
-            return response.json()    # return everything?
-        else:
+        if response.status_code != 200:
             response.raise_for_status()
 
     # Lists all the users playlists from spotify.

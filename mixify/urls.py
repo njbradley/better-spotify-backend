@@ -24,7 +24,18 @@ urlpatterns = [
 
     path("api/playback/play", apis.play),
     path("api/playback/pause", apis.pause),
-    path("api/playback/status", apis.status),
+    path("api/playback/state", apis.state),
+    
+    path("api/search", apis.search),
+
+    #path("api/tags", apis.getTag),
+    #path("api/tag/list", apis.getTag),
+    #path("api/tag/create", apis.createTag),
+    #path("api/tag/add", apis.addTag),
+    #path("api/tag/remove", apis.addTag),
+
+    #path("api/tag/", apis.listTags),
+    #path("api/tag/<name>", apis.tagApi),
 
     path("spotify/", include("spotify_backend.urls")),
 

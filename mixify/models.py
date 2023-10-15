@@ -23,6 +23,8 @@ class Song(models.Model):
     album_art = models.URLField(max_length=255, null=True)
     duration = models.IntegerField()
 
+    duration = models.IntegerField()
+
 class Tag(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=127)
@@ -41,7 +43,7 @@ class MusicBackend(models.Model):
     def pause():
         pass
 
-    def currentState() -> (Song, int, int):
+    def state() -> (Song, int, int):
         pass
 
     def search():
