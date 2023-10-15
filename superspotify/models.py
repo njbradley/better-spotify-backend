@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 
-from .spotify.login import SpotifyBackend
+from .spotify.spotify import SpotifyBackend
 
 class Song(models.Model):
     uid = models.CharField(max_length=127)
@@ -22,7 +22,6 @@ class TaggedSong(models.Model):
     song = models.ForeignKey(Song, on_delete=models.PROPAGATE)
 
 class CustomUser(AbstractUser):
-    username = models.CharField(max_length=127)
     musicBackends = [SpotifyBackend]
 
     def getMusicBackend(self, user):
@@ -32,7 +31,7 @@ class CustomUser(AbstractUser):
                 return backend
 
 class MusicBackend(models.Model):
-    user = model.ForeignKey(CustomUser, on_delete=models.PROPAGATE)
+    user = models.ForeignKey(CustomUser, on_delete=models.PROPAGATE)
 
     def login(user):
         pass
