@@ -33,7 +33,7 @@ class SpotifyBackend(MusicBackend):
     def login(self, callback_url):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
-        self.state = secrets.token_hex(16)
+        self.state = secrets.token_hex(8)
         print (callback_url)
 
         oauth = OAuth2Session(client_id, redirect_uri=callback_url, scope=self.scope)
@@ -114,13 +114,13 @@ class SpotifyBackend(MusicBackend):
         else:
             response.raise_for_status()
 
-    def trackObjToSong(track):
+    def trackObjToSong(self, track):
         name, artist = track['name'], track['artists'][0]['name']
         params = dict(
-            duration=track['duration'],
-            album_art=track['album']['images'][-1]['url'],
+            duration=track['duration_ms'],
+            album_art=self.getBestArt(track['album']['images']),
         )
-        return reverseLookupSong(track['id'], name, artist, params)
+        return self.reverseLookupSong(track['id'], name, artist, params)
     
     # Looks up for song in SpotifySong database.
     # If found, then return SpotifySong database entry(each song is unique).
@@ -156,7 +156,7 @@ class SpotifyBackend(MusicBackend):
 
         return None
 
-    def reverseLookupSong(spotify_id, name, artist, params):
+    def reverseLookupSong(self, spotify_id, name, artist, params):
         query = SpotifySong.objects.filter(spotify_id=spotify_id)
         if query.count() > 0:
             return query[0].song
@@ -173,7 +173,17 @@ class SpotifyBackend(MusicBackend):
         spotifySong.save()
         return song
 
-    def search(self, query, page=0, pagesize=50):
+    def getBestArt(self, images):
+        print (images)
+        if len(images) == 0: return None
+        index = 0
+        while (index < len(images)-1 and images[index]['height'] is not None and images[index]['width'] is not None
+                and images[index]['width'] > 300 and images[index]['height'] > 300):
+            index += 1
+        
+        return images[index]['url']
+
+    def search(self, query, page=0, pagesize=20):
         base_url = "https://api.spotify.com/v1/search"
         
         params = {
@@ -193,7 +203,7 @@ class SpotifyBackend(MusicBackend):
         songs = []
 
         for track in tracks:
-            songs.append(trackObjToSong(track))
+            songs.append(self.trackObjToSong(track))
 
         playlists = json['playlists']['items']
         out_playlists = []
@@ -203,11 +213,11 @@ class SpotifyBackend(MusicBackend):
 
         return songs, out_playlists
 
-    def reformatPlaylistObj(playlist):
+    def reformatPlaylistObj(self, playlist):
         return dict(
             collaborative=playlist['collaborative'],
-            description=playlist['collabroative'],
-            image=playlist['image'],
+            description=playlist['description'],
+            image=self.getBestArt(playlist['images']),
             name=playlist['name'],
             owner=dict(
                 username=self.user.username,

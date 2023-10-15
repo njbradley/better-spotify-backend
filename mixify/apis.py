@@ -6,6 +6,14 @@ from .models import Song
 import requests
 
 
+@api_view(['POST'])
+def login_api(request):
+    serializer = AuthTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.validated_data['user']
+    token = Token.objects.get(user=user).key
+
+
 @api_view(http_method_names=['POST'])
 def play(request):
   backend = request.user.getMusicBackend()
@@ -74,11 +82,11 @@ def addTag(request):
       return RestResponse({"status": "success"})
   return RestResponse({"status": "unchanged"})
 
-@api_view(http_method_name=['GET'])
+@api_view(http_method_names=['POST'])
 def search(request):
   query = request.data['query']
   songs, playlists = request.user.getMusicBackend().search(query)
-  tags = findTags(requests.user, query)
+  tags = findTags(request.user, query)
   data = convertSongToTrackObject(songs)
   data['numTracks'] = len(songs)
   data['playlists'] = playlists
@@ -107,9 +115,9 @@ def convertSongToTrackObject(songs):
 def findTags(user, query) -> list[Tag]:
   new_tag = Tag.objects.filter(user=user)
   words = query.split()
-  new_tag = new_tag.objects.get(headline__icontains=words[0])
+  new_tag = new_tag.filter(name__icontains=words[0])
   for i in range(1, len(words)):
-    new_tag = new_tag | new_tag.objects.get(headline__icontains=words[i])
+    new_tag = new_tag | new_tag.filter(name__icontains=words[i])
   
   return list(new_tag)
 
