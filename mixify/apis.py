@@ -4,7 +4,6 @@ from .models import Tag
 from .models import TaggedSong
 from .models import Song
 import requests
-
 #import redis
 
 #r = redis.Redis(
@@ -35,6 +34,46 @@ def status(request):
   song, curpos, duration = request.user.getMusicBackend().currentState()
   return RestResponse({"song": song.uid, "position": curpos, "duration": duration})
 
+@api_view(http_method_name=['GET'])
+def search(request):
+  query = request.data['query']
+  songs, playlists = request.user.getMusicBackend().search(query)
+  tags = findTags(requests.user, query)
+  data = convertSongToTrackObject(songs)
+  data['numTracks'] = len(songs)
+  data['playlists'] = playlists
+  data['numPlaylists'] = len(playlists)
+  data['tags'] = []
+  for index, tag in enumerate(tags):
+    data['tags'].append({})
+    data['tags'][index]['name'] = tags[index].name
+  return RestResponse(data)
+
+def convertSongToTrackObject(songs):
+  data = {}
+  data['tracks'] = []
+  for index, song in enumerate(songs):
+    data['tracks'].append({})
+    data['tracks'][index]["albumArt"] = song.album_art
+    data['tracks'][index]["artistsNames"] = [song.artist]
+    data['tracks'][index]['duration'] = song.duration
+    data['tracks'][index]["playable"] = True
+    data['tracks'][index]["name"] = song.name
+    data['tracks'][index]["uuid"] = song.uid
+
+  return data
+
+
+def findTags(user, query) -> list[Tag]:
+  new_tag = Tag.objects.filter(user=user)
+  words = query.split()
+  new_tag = new_tag.objects.get(headline__icontains=words[0])
+  for i in range(1, len(words)):
+    new_tag = new_tag | new_tag.objects.get(headline__icontains=words[i])
+  
+  return list(new_tag)
+
+
 
 def create_tag(request):
   tag = Tag(request.user, request.data["tag_name"])
@@ -64,7 +103,7 @@ def get_playlist_details(request):
         response.raise_for_status()
 
 # given user id and name of tag, return the id of songs
-def get_tag(uid, tag):
+def get_songid_from_tag(uid, tag):
   tags = Tag.objects.get(uid=uid, name=tag)
   taggedSongs = TaggedSong.objects.filter(tag=tags)
   uids = []
@@ -80,7 +119,4 @@ def get_song(uids = []):
    for uid in uids:
       songs.append(Song.objects.get(uid))
    return songs
-
-
-
 
