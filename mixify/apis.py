@@ -2,6 +2,7 @@ from rest_framework.response import Response as RestResponse
 from rest_framework.decorators import api_view
 from .models import Tag
 from .models import TaggedSong
+from .models import Song
 import requests
 
 import redis
@@ -35,7 +36,7 @@ def create_tag(request):
   tag = Tag(request.user, request.data["tag_name"])
   tag.save()
 
-def add_tag_son(request):
+def create_tagged_song(request):
   tag_song = TaggedSong(request.data["tag"], request.data["song"])
   tag_song.save()
 
@@ -58,10 +59,24 @@ def get_playlist_details(request):
     else:
         response.raise_for_status()
 
-# # Usage
-# playlist_details = get_playlist_details(playlist_id, token)
-# print(playlist_details)
+# given user id and name of tag, return the id of songs
+def get_tag(uid, tag):
+  tags = Tag.objects.get(uid=uid, name=tag)
+  taggedSongs = TaggedSong.objects.filter(tag=tags)
+  uids = []
 
-# get name, id, and uri
-def tag_search(uid):
+  for taggedSong in taggedSongs:
+    uids.append(taggedSong.song.uid)
   
+  return uids
+
+# given id of songs, return song
+def get_song(uids = []):
+   songs: Song = []
+   for uid in uids:
+      songs.append(Song.objects.get(uid))
+   return songs
+
+
+
+
