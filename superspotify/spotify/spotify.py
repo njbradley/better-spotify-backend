@@ -23,6 +23,7 @@ class SpotifyBackend(MusicBackend):
 
         api_url = 'https://accounts.spotify.com/authorize'
         client_id = os.environ['CLIENT_ID']
+        client_secret = os.environ['CLIENT_SECRET']
         scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing app-remote-control streaming playlist-read-private'
         state = '132456'
 
