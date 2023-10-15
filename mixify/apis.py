@@ -128,7 +128,7 @@ def convertSongToTrackObject(songs):
   for index, song in enumerate(songs):
     data['tracks'].append({})
     data['tracks'][index]["albumArt"] = song.album_art
-    data['tracks'][index]["artistsNames"] = [song.artist]
+    data['tracks'][index]["artistNames"] = [song.artist]
     data['tracks'][index]['duration'] = song.duration
     data['tracks'][index]["playable"] = True
     data['tracks'][index]["name"] = song.name
