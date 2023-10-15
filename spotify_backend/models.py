@@ -184,3 +184,22 @@ class SpotifyBackend(MusicBackend):
         else:
             response.raise_for_status()
 
+    # Lists all the users playlists from spotify.
+    # Return a list of PlayListObject dictionaries.
+    def listPlaylists(self) -> dict():
+        api_url = "https://api.spotify.com/v1/me/playlists"
+        response = self.oauth.get(api_url)
+        if response.status_code != 200:
+            response.raise_for_status()
+        else:
+            json = response.json()
+            result_list = []
+            for i in range(len(json['items'])):
+                result_list.append({})
+                result_list[i]['collaborative'] = False
+                result_list[i]['description'] = json['items'][i]['description']
+                result_list[i]['image'] = json['items'][i]['description']
+                result_list[i]['description'] = json['items'][i]['description']
+                result_list[i]['description'] = json['items'][i]['description']
+
+        

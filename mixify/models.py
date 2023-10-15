@@ -21,6 +21,7 @@ class Song(models.Model):
     name = models.CharField(max_length=127)
     artist = models.CharField(max_length=127)
     album_art = models.URLField(max_length=255, null=True)
+    duration = models.IntegerField()
 
 class Tag(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
