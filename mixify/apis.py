@@ -5,9 +5,11 @@ from .models import TaggedSong
 from .models import Song
 import requests
 
+from django.views.decorators.csrf import csrf_exempt
 
 @api_view(['POST'])
 def login_api(request):
+    print (request)
     serializer = AuthTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.validated_data['user']
@@ -41,7 +43,9 @@ def state(request):
 @api_view(http_method_names=['GET', 'POST', 'PUT', 'DELETE'])
 def tagApi(request, name=None, id=None):
     if name is not None:
-        tag = Tag.objects.get(user=request.user, name=name)
+        query = Tag.objects.filter(user=request.user, name=name)
+        if query.count() == 0:
+            tag = Tag.objects.create(user=request.user, name=name)
     if id is not None:
         tag = Tag.objects.get(id=id)
 
@@ -56,8 +60,20 @@ def tagApi(request, name=None, id=None):
         return RestResponse(list(songs))
 
     if request.method == 'POST':
-        pass
+        for song in songs:
+            TaggedSong.objects.create(tag=tag, song=song)
 
+    if request.method == 'PUT':
+        TaggedSong.objects.filter(tag=tag).delete()
+        for song in songs:
+            TaggedSong.objects.create(tag=tag, song=song)
+
+    if request.method == 'DELETE':
+        if songs is None:
+            tag.delete()
+        else:
+            for song in songs:
+                TaggedSong.objects.filter(tag=tag, song=song).delete()
 
 
 @api_view(http_method_names=['PUT'])
