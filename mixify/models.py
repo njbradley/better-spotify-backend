@@ -7,14 +7,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
-    def getMusicBackend(self, user):
-        from .spotify.spotify import SpotifyBackend
+    def getMusicBackend(self):
+        from spotify_backend.models import SpotifyBackend
         musicBackends = [SpotifyBackend]
 
-        for backend in self.musicBackends:
-            query = backend.objects.filter(user=user)
+        for backend in musicBackends:
+            query = backend.objects.filter(user=self)
             if query.count() != 0:
-                return backend
+                return query[0]
 
 class Song(models.Model):
     uid = models.CharField(max_length=127)

@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from . import apis
+from . import apis, views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,6 +25,10 @@ urlpatterns = [
     path("api/playback/play", apis.play),
     path("api/playback/pause", apis.pause),
     path("api/playback/status", apis.status),
+
+    path("spotify/", include("spotify_backend.urls")),
+
+    path("", views.homepage),
 
     #path("api/tags/", apis.tags),
     #path("api/tags/<tagid>", apis.tags),

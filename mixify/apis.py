@@ -5,29 +5,30 @@ from .models import TaggedSong
 from .models import Song
 import requests
 
-import redis
+#import redis
 
-r = redis.Redis(
-  host='redis-11191.c27688.us-east-1-mz.ec2.cloud.rlrcp.com',
-  port=11191,
-  password='8tqBgsB0gBKeGaexEmq4RhLWMe2Pnzqg')
+#r = redis.Redis(
+  #host='redis-11191.c27688.us-east-1-mz.ec2.cloud.rlrcp.com',
+  #port=11191,
+  #password='8tqBgsB0gBKeGaexEmq4RhLWMe2Pnzqg')
 
-@api_view()
+@api_view(http_method_names=['POST'])
 def play(request):
   backend = request.user.getMusicBackend()
   #  request.data = json object
-  # request.song_id
+  # request.song
   # request.playback is timing
   id = request.data["song"]
   pos = request.data["position"]
   song = Song.objects.get(uid = id)
   backend.play(song, pos)
+  return RestResponse({"status": "success"})
 
-@api_view()
+@api_view(http_method_names=['PUT'])
 def pause(request):
   request.user.getMusicBackend().pause()
 
-@api_view()
+@api_view(http_method_names=['GET'])
 def status(request):
   return 
 

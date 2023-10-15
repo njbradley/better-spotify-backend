@@ -10,11 +10,12 @@ class SpotifySong(models.Model):
     song = models.ForeignKey(Song, on_delete=models.CASCADE)
     spotify_id = models.CharField(max_length=255)
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Handles Spotify Backend methods.    
 class SpotifyBackend(MusicBackend):
     token = models.JSONField(null=True)
-    state = models.CharField(max_length=16)
+    state = models.CharField(max_length=16, null=True)
 
     authorize_url = 'https://accounts.spotify.com/authorize'
     token_url = 'https://accounts.spotify.com/api/token'
@@ -33,9 +34,10 @@ class SpotifyBackend(MusicBackend):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
         self.state = secrets.token_hex(16)
+        print (callback_url)
 
-        oauth = OAuth2Session(self.client_id, redirect_uri=callback_url, scope=self.scope)
-        auth_url, state = self.oauth.authorization_url(api_url, state=self.state)
+        oauth = OAuth2Session(client_id, redirect_uri=callback_url, scope=self.scope)
+        auth_url, state = oauth.authorization_url(self.authorize_url, state=self.state)
 
         return auth_url
 
@@ -43,18 +45,16 @@ class SpotifyBackend(MusicBackend):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
 
-        oauth = OAuth2Session(self.client_id, redirect_uri=callback_url, scope=self.scope)
-        auth_url, state = self.oauth.authorization_url(api_url, state=self.state)
+        oauth = OAuth2Session(client_id, redirect_uri=callback_url, scope=self.scope)
+        auth_url, state = oauth.authorization_url(self.authorize_url, state=self.state)
         token = oauth.fetch_token(
             self.token_url,
-            authorization_response=request.url,
+            authorization_response=request_url,
             client_secret=client_secret)
         self.token = token
         self.save()
 
         self.oauth = self.get_oauth()
-
-        return auth_url, loginCallback
     
     def get_oauth(self):
         client_id = os.environ['CLIENT_ID']
@@ -72,7 +72,7 @@ class SpotifyBackend(MusicBackend):
     # Sends song duration to 
     def play(self, song: Song, start_time: int):
         api_url = "https://api.spotify.com/v1/me/player/play"
-        uri = "spotify:track:" + lookupSong(song).spotify_id
+        uri = "spotify:track:" + self.lookupSong(song).spotify_id
         request_body = {
             "uris": uri,
             "position_ms": start_time
@@ -125,10 +125,10 @@ class SpotifyBackend(MusicBackend):
     # Otherwise, it adds a new song into the SpotifySong database and 
     # then returns the entry.
     # If no song is found in spotify's database, return None.
-    def lookupSong(song: Song) -> SpotifySong:
+    def lookupSong(self, song: Song) -> SpotifySong:
         # look up song in database
         query = SpotifySong.objects.filter(song=song)
-        if query.size() > 0:
+        if query.count() > 0:
             return query[0]
         
         # lookup from spotify api if have name alternative, fun
@@ -136,8 +136,11 @@ class SpotifyBackend(MusicBackend):
         track = song.name
         api_url = "https://api.spotify.com/v1/search"
         params = {"q": {"artist": artist, "track": track}}
+        print (params)
         response = self.oauth.get(api_url, params=params)
-        status_code = response.status_code()
+        status_code = response.status_code
+        print (status_code)
+        print (response.json())
         if status_code == 403:
             # Bad OAuth request
             raise RuntimeError("Bad OAuth request")
@@ -146,6 +149,7 @@ class SpotifyBackend(MusicBackend):
             raise RuntimeError("The app has exceeded its rate limits.")
         elif status_code == 200:
             json = response.json()
+            print (json)
             if json['tracks']['total'] > 0:
                 return SpotifySong.objects.create(song=song, spotify_id=json['tracks']['items']['id'])
 
