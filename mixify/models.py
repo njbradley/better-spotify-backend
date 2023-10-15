@@ -23,6 +23,7 @@ class Song(models.Model):
     album_art = models.URLField(max_length=255, null=True)
     duration = models.IntegerField()
 
+    duration = models.IntegerField()
 
 class Tag(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

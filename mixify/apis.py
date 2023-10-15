@@ -1,5 +1,7 @@
 from rest_framework.response import Response as RestResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from .models import Tag
 from .models import TaggedSong
 from .models import Song
@@ -45,7 +47,11 @@ def tagApi(request, name=None, id=None):
     if name is not None:
         query = Tag.objects.filter(user=request.user, name=name)
         if query.count() == 0:
+            if request.method == 'GET':
+                return RestResponse({"error": "tag not found"}, 404)
             tag = Tag.objects.create(user=request.user, name=name)
+        else:
+            tag = query[0]
     if id is not None:
         tag = Tag.objects.get(id=id)
 
@@ -74,6 +80,7 @@ def tagApi(request, name=None, id=None):
         else:
             for song in songs:
                 TaggedSong.objects.filter(tag=tag, song=song).delete()
+    return RestResponse({"status": "success"})
 
 
 @api_view(http_method_names=['PUT'])
@@ -99,6 +106,8 @@ def addTag(request):
   return RestResponse({"status": "unchanged"})
 
 @api_view(http_method_names=['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def search(request):
   query = request.data['query']
   songs, playlists = request.user.getMusicBackend().search(query)
@@ -154,12 +163,44 @@ def removeTag(request):
 
 @api_view(http_method_names=['GET'])
 def getTag(request):
-    if 'id' in request.data:
-        tag = Tag.get(id=request.data['id'])
-    else:
-        tag = Tag.get(user=request.user, name=request.data['name'])
-    songs = TaggedSong.objects.filter(tag=tag).values_list('song').values()
-    return RestResponse({'id': tag.id, 'name': name, 'songs': songs})
+  if 'id' in request.data:
+      tag = Tag.get(id=request.data['id'])
+  else:
+      tag = Tag.get(user=request.user, name=request.data['name'])
+  songs = TaggedSong.objects.filter(tag=tag).values_list('song').values()
+  return RestResponse({'id': tag.id, 'name': name, 'songs': songs})
+
+
+@api_view(http_method_names=['GET'])
+def getUserTags(request):
+  tag_names = Tag.objects.filter(user=requests.user).values('name')
+  result = []
+  for i in len(tag_names):
+    result.append({})
+    result[i]['name'] = tag_names[i]['name']
+
+  return RestResponse({'tags': result, 'numTags': len(result)})
+        
+
+@api_view(http_method_names=['GET'])
+def getUserSongs(request):
+  tags = Tag.objects.filter(user=requests.user)
+  user_songs = TaggedSong.objects.filter(tag=tags[0])
+  for i in range(1, tags.count()):
+    user_songs = user_songs | TaggedSong.objects.filter(tag=tags[i])
+
+  songs = user_songs.values("song")
+  result = []
+  for i in len(songs):
+    result.append({})
+    result[i]['albumArt'] = songs[i]['song'].album_art
+    result[i]['artistsNames'] = [songs[i]['song'].artist]
+    result[i]['duration'] = songs[i]['song'].duration
+    result[i]['playable'] = True
+    result[i]['name'] = songs[i]['song'].name
+    result[i]['uuid'] = songs[i]['song'].uid
+  
+  return RestResponse({'tracks': result, 'numTracks': len(result)})
 
 # get all songs with tag
 # get tag from user

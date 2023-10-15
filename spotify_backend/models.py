@@ -150,6 +150,8 @@ class SpotifyBackend(MusicBackend):
             if json['tracks']['total'] > 0:
                 tracks = json['tracks']['items']
                 spotify_id = tracks[0]['id']
+                print (tracks)
+                print (spotify_id)
                 return SpotifySong.objects.create(song=song, spotify_id=spotify_id)
         else:
             response.raise_for_status()
@@ -167,7 +169,7 @@ class SpotifyBackend(MusicBackend):
             spotifySong.save()
             return spotifySong.song
 
-        song = Song(uid=name+'__'+artist, name=name, artist=artist, **params)
+        song = Song(uid=name+'__'+artist, name=name, artist=artist)
         song.save()
         spotifySong = SpotifySong(song=song, spotify_id=spotify_id)
         spotifySong.save()
@@ -183,7 +185,7 @@ class SpotifyBackend(MusicBackend):
         
         return images[index]['url']
 
-    def search(self, query, page=0, pagesize=20):
+    def search(self, query, page=0, pagesize=50):
         base_url = "https://api.spotify.com/v1/search"
         
         params = {
@@ -203,30 +205,70 @@ class SpotifyBackend(MusicBackend):
         songs = []
 
         for track in tracks:
-            songs.append(self.trackObjToSong(track))
+            name, artist = track['name'], track['artists'][0]['name']
+            params = dict(
+                duration=track['duration'],
+                album_art=track['album']['images'][-1]['url'],
+            )
+
+            song = reverseLookupSong(track['id'], name, artist, params)
+            songs.append(song)
 
         playlists = json['playlists']['items']
         out_playlists = []
 
         for playlist in playlists:
-            out_playlists.append(self.reformatPlaylistObj(playlist))
+            out_playlists.append(dict(
+                collaborative=playlist['collaborative'],
+                description=playlist['collabroative'],
+                image=playlist['image'],
+                name=playlist['name'],
+                owner=dict(
+                    username=self.user.username,
+                    isFriend=False,
+                    profileUri=None,
+                    uuid=self.user.id,
+                ),
+            ))
 
         return songs, out_playlists
 
-    def reformatPlaylistObj(self, playlist):
-        return dict(
-            collaborative=playlist['collaborative'],
-            description=playlist['description'],
-            image=self.getBestArt(playlist['images']),
-            name=playlist['name'],
-            owner=dict(
-                username=self.user.username,
-                isFriend=False,
-                profileUri=None,
-                uuid=self.user.id,
-            ),
-        )
+    # Lists all the users playlists from spotify.
+    # Return a list of PlayListObject dictionaries.
+    def listPlaylists(self) -> dict():
+        api_url = "https://api.spotify.com/v1/me/playlists"
+        response = self.oauth.get(api_url)
+        if response.status_code != 200:
+            response.raise_for_status()
+        else:
+            json = response.json()
+            result_list = []
+            for i in range(len(json['items'])):
+                result_list.append({})
+                result_list[i]['collaborative'] = False
+                result_list[i]['description'] = json['items'][i]['description']
+                result_list[i]['image'] = self.getBestArt(json['items'][i]['images'])
+                result_list[i]['name'] = json['items'][i]['name']
+                result_list[i]['owner'] = json['items'][i]['owner']
+                result_list[i]['uuid'] = json['items'][i]['id']
+        
+            return result_list
 
-    def listPlaylists():
-        pass
-
+    
+    # Takes in a playlists and import them.
+    def importPlaylist(self, playlists):
+        for i in range(len(playlists)):
+            p = playlists[i]
+            p_id = p['uuid']
+            api_url = f"https://api.spotify.com/v1/playlists/{p_id}"
+            response = self.oauth.get(api_url)
+            if response.status_code != 200:
+                response.raise_for_status()
+            else:
+                tracks = response.json()['tracks']
+                for playlist_track_obj in tracks['items']:
+                    track_obj = playlist_track_obj['track']
+                    id = track_obj['id']
+                    name = track_obj['name']
+                    artist = track_obj['artists'][0]['name']
+                    self.reverseLookupSong(self, id, name, artist)
