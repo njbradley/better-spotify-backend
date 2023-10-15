@@ -6,7 +6,15 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 
-from .spotify.spotify import SpotifyBackend
+class CustomUser(AbstractUser):
+    def getMusicBackend(self, user):
+        from .spotify.spotify import SpotifyBackend
+        musicBackends = [SpotifyBackend]
+
+        for backend in self.musicBackends:
+            query = backend.objects.filter(user=user)
+            if query.count() != 0:
+                return backend
 
 class Song(models.Model):
     uid = models.CharField(max_length=127)
@@ -14,24 +22,16 @@ class Song(models.Model):
     artist = models.CharField(max_length=127)
 
 class Tag(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.PROPAGATE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=127)
 
 class TaggedSong(models.Model):
-    tag = models.ForeignKey(Tag, on_delete=models.PROPAGATE)
-    song = models.ForeignKey(Song, on_delete=models.PROPAGATE)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    song = models.ForeignKey(Song, on_delete=models.CASCADE)
 
-class CustomUser(AbstractUser):
-    musicBackends = [SpotifyBackend]
-
-    def getMusicBackend(self, user):
-        for backend in self.musicBackends:
-            query = backend.objects.filter(user=user)
-            if query.count() != 0:
-                return backend
 
 class MusicBackend(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.PROPAGATE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     def login(user):
         pass
@@ -46,5 +46,5 @@ class MusicBackend(models.Model):
         pass
     
     class Meta:
-        abstract = False
+        abstract = True
 

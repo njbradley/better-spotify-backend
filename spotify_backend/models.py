@@ -1,14 +1,13 @@
 from urllib.parse import urlencode
 from django.db import models
-from ..musicbackend import MusicBackend
-from ..models import Song
+from mixify.models import Song, MusicBackend
 import requests
-from requests_oathlib import OAuth2Session
+from requests_oauthlib import OAuth2Session
 import os
 import secrets
 
 class SpotifySong(models.Model):
-    song = models.ForeignKey(Song, on_delete=models.PROPAGATE)
+    song = models.ForeignKey(Song, on_delete=models.CASCADE)
     spotify_id = models.CharField(max_length=255)
 
 

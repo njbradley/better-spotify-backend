@@ -1,5 +1,5 @@
 """
-URL configuration for superspotify project.
+URL configuration for mixify project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
@@ -26,7 +26,7 @@ urlpatterns = [
     path("api/playback/pause", apis.pause),
     path("api/playback/status", apis.status),
 
-    path("api/tags/", apis.tags),
-    path("api/tags/<tagid>", apis.tags),
-    path("api/query", apis.query),
+    #path("api/tags/", apis.tags),
+    #path("api/tags/<tagid>", apis.tags),
+    #path("api/query", apis.query),
 ]

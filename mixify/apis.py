@@ -1,7 +1,5 @@
 from rest_framework.response import Response as RestResponse
 from rest_framework.decorators import api_view
-from rest_framework.views import api_view
-from rest_framework.response import RestResponse
 from .models import Tag
 from .models import TaggedSong
 import requests
