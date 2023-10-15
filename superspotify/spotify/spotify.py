@@ -1,16 +1,38 @@
+from urllib.parse import urlencode
 from ..musicbackend import MusicBackend
 from ..models import Song
 import requests
+import requests.oath2
+import os
 
 # Handles Spotify Backend methods.    
 class SpotifyBackend(MusicBackend):
+    code = models.CharField(max_length=255)
 
     # Add the spotify account:
     #   - Authorize user.
     #   - Get authentication token.
     #   - A
-    def login(self, user):
-        pass
+    def login(self, user, callback_url):
+
+        api_url = 'https://accounts.spotify.com/authorize'
+        client_id = os.environ['CLIENT_ID']
+        scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing app-remote-control streaming playlist-read-private'
+        state = '132456'
+
+        self.oauth = OAuth2Session(client_id, redirect_uri='https://127.0.0.1:8080/callback', scope=scope)
+        auth_url, state = self.oauth.authorization_url(api_url, state=state)
+
+        def loginCallback(self, request, callback_url):
+            token = self.oauth.fetch_token(
+                'https://accounts.spotify.com/api/token',
+                authorization_response=request.url,
+                client_secret=client_secret)
+
+        return auth_url, self.loginCallback
+
+
+        
 
     # Plays "song" in spotify from "time" ms.
     # Sends song duration to 
