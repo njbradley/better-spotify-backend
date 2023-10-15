@@ -199,7 +199,7 @@ def getUserSongs(request):
     song = songs[i].song
     result.append({})
     result[i]['albumArt'] = song.album_art
-    result[i]['artistsNames'] = [song.artist]
+    result[i]['artistNames'] = [song.artist]
     result[i]['duration'] = song.duration
     result[i]['playable'] = True
     result[i]['name'] = song.name
