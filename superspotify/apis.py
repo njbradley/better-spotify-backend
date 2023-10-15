@@ -1,5 +1,7 @@
 from rest_framework.views import api_view
 from rest_framework.response import RestResponse
+from .models import Tag
+from .models import TaggedSong
 
 @api_view()
 def play(request):
@@ -20,3 +22,11 @@ def pause(request):
 def status(request):
   return 
 
+
+def create_tag(request):
+  tag = Tag(request.user, request.data["tag_name"])
+  tag.save()
+
+def add_tag_son(request):
+  tag_song = TaggedSong(request.data["tag"], request.data["song"])
+  tag_song.save()
