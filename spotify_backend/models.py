@@ -185,7 +185,7 @@ class SpotifyBackend(MusicBackend):
         
         return images[index]['url']
 
-    def search(self, query, page=0, pagesize=20):
+    def search(self, query, page=0, pagesize=50):
         base_url = "https://api.spotify.com/v1/search"
         
         params = {
@@ -199,6 +199,39 @@ class SpotifyBackend(MusicBackend):
 
         if response.status_code != 200:
             response.raise_for_status()
+
+        json = response.json()
+        tracks = json['tracks']['items']
+        songs = []
+
+        for track in tracks:
+            name, artist = track['name'], track['artists'][0]['name']
+            params = dict(
+                duration=track['duration'],
+                album_art=track['album']['images'][-1]['url'],
+            )
+
+            song = reverseLookupSong(track['id'], name, artist, params)
+            songs.append(song)
+
+        playlists = json['playlists']['items']
+        out_playlists = []
+
+        for playlist in playlists:
+            out_playlists.append(dict(
+                collaborative=playlist['collaborative'],
+                description=playlist['collabroative'],
+                image=playlist['image'],
+                name=playlist['name'],
+                owner=dict(
+                    username=self.user.username,
+                    isFriend=False,
+                    profileUri=None,
+                    uuid=self.user.id,
+                ),
+            ))
+
+        return songs, out_playlists
 
     # Lists all the users playlists from spotify.
     # Return a list of PlayListObject dictionaries.
