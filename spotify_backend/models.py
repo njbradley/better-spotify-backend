@@ -151,7 +151,7 @@ class SpotifyBackend(MusicBackend):
 
         return None
 
-    def reverseLookupSong(spotify_id, name, artist, album_art=None):
+    def reverseLookupSong(spotify_id, name, artist, params):
         query = SpotifySong.objects.filter(spotify_id=spotify_id)
         if query.count() > 0:
             return query[0].song
@@ -162,25 +162,58 @@ class SpotifyBackend(MusicBackend):
             spotifySong.save()
             return spotifySong.song
 
-        song = Song(uid=name+'__'+artist, name=name, artist=artist)
+        song = Song(uid=name+'__'+artist, name=name, artist=artist, **params)
         song.save()
         spotifySong = SpotifySong(song=song, spotify_id=spotify_id)
         spotifySong.save()
         return song
 
-    def search_spotify(self, query, token, type="track", limit=10):
+    def search(self, query, page=0, pagesize=50):
         base_url = "https://api.spotify.com/v1/search"
         
         params = {
             "q": query,
-            "type": type,
-            "limit": limit
+            "type": 'track,playlist',
+            "limit": pagesize,
+            "offset": page * pagesize,
         }
         
         response = self.oauth.get(base_url, params=params)
 
-        if response.status_code == 200:
-            return response.json()    # return everything?
-        else:
+        if response.status_code != 200:
             response.raise_for_status()
+
+        json = response.json()
+        tracks = json['tracks']['items']
+        songs = []
+
+        for track in tracks:
+            name, artist = track['name'], track['artists'][0]['name']
+            params = dict(
+                duration=track['duration'],
+                album_art=track['album']['images'][-1]['url'],
+            )
+
+            song = reverseLookupSong(track['id'], name, artist, params)
+            songs.append(song)
+
+        playlists = json['playlists']['items']
+        out_playlists = []
+
+        for playlist in playlists:
+            out_playlists.append(dict(
+                collaborative=playlist['collaborative'],
+                description=playlist['collabroative'],
+                image=playlist['image'],
+                name=playlist['name'],
+                owner=dict(
+                    username=self.user.username,
+                    isFriend=False,
+                    profileUri=None,
+                    uuid=self.user.id,
+                ),
+            ))
+
+        return songs, out_playlists
+
 
