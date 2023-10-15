@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Alrite</title>
+</head>
+<body>
+  <section id="login-card" class="card">
+    <h1 class="page-title">
+      Welcome
+    </h1>
+    <h2 class="page-title">
+      Enter Your Credentials
+    </h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form }}
+      <button type="submit">Login</button>
+    </form>
+  </section>
+</body>
+</html>
