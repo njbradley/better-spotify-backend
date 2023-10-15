@@ -15,7 +15,6 @@ class SpotifyBackend(MusicBackend):
     # Plays "song" in spotify from "time" ms.
     # Sends song duration to 
     def play(self, song: Song, start_time: int, retries=0):
-
         api_url = "https://api.spotify.com/v1/me/player/play"
         request_body = {
             "uris": song,
@@ -36,12 +35,25 @@ class SpotifyBackend(MusicBackend):
         elif status_code == 429:
             # The app has exceeded its rate limits.
             raise RuntimeError("The app has exceeded its rate limits.")
+        
 
-            
-
-
-    def pause(self):
-        pass
+    # Pauses the current song in play.
+    def pause(self, retries=0):
+        api_url = "https://api.spotify.com/v1/me/player/pause"
+        response = requests.put(api_url)
+        status_code = response.status_code()
+        if status_code == 401:
+            self.authenticateToken()
+            if retries < 2:
+                self.pause(self, retries+1)
+            else:
+                raise RuntimeError("Too many re-authentications")
+        elif status_code == 403:
+            # Bad OAuth request
+            raise RuntimeError("Bad OAuth request")
+        elif status_code == 429:
+            # The app has exceeded its rate limits.
+            raise RuntimeError("The app has exceeded its rate limits.")
 
     def currentState(self) -> (Song, int, int):
         pass
