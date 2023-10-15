@@ -112,7 +112,9 @@ class SpotifyBackend(MusicBackend):
         # lookup from spotify api if have name alternative, fun
         api_url = "https://api.spotify.com/v1/search"
         params = {"q": {"artist": song.artist, "track": song.name}}
-        self.oauth.get(api_url, params=params)
+        response = self.oauth.get(api_url, params=params)
+        status_code = response.status_code()
+
 
         pass
 
