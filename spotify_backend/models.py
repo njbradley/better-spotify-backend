@@ -14,6 +14,11 @@ class SpotifySong(models.Model):
 # Handles Spotify Backend methods.    
 class SpotifyBackend(MusicBackend):
     token = models.JSONField(null=True)
+    state = models.CharField(max_length=16)
+
+    authorize_url = 'https://accounts.spotify.com/authorize'
+    token_url = 'https://accounts.spotify.com/api/token'
+    scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing app-remote-control streaming playlist-read-private'
 
     def __init__(self, *args, **kwargs):
         super(SpotifyBackend, self).__init__(*args, **kwargs)
@@ -24,38 +29,42 @@ class SpotifyBackend(MusicBackend):
     #   - Authorize user.
     #   - Get authentication token.
     #   - A
-    def login(self, user, callback_url):
-        api_url = 'https://accounts.spotify.com/authorize'
+    def login(self, callback_url):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
-        scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing app-remote-control streaming playlist-read-private'
-        state = secrets.token_hex(16)
+        self.state = secrets.token_hex(16)
 
-        oauth = OAuth2Session(client_id, redirect_uri=callback_url, scope=scope)
-        auth_url, state = self.oauth.authorization_url(api_url, state=state)
+        oauth = OAuth2Session(self.client_id, redirect_uri=callback_url, scope=self.scope)
+        auth_url, state = self.oauth.authorization_url(api_url, state=self.state)
 
-        def loginCallback(self, request, callback_url):
-            token = oauth.fetch_token(
-                'https://accounts.spotify.com/api/token',
-                authorization_response=request.url,
-                client_secret=client_secret)
-            self.token = token
-            self.save()
+        return auth_url
 
-            self.oauth = self.get_oauth()
+    def loginCallback(self, callback_url, request_url):
+        client_id = os.environ['CLIENT_ID']
+        client_secret = os.environ['CLIENT_SECRET']
+
+        oauth = OAuth2Session(self.client_id, redirect_uri=callback_url, scope=self.scope)
+        auth_url, state = self.oauth.authorization_url(api_url, state=self.state)
+        token = oauth.fetch_token(
+            self.token_url,
+            authorization_response=request.url,
+            client_secret=client_secret)
+        self.token = token
+        self.save()
+
+        self.oauth = self.get_oauth()
 
         return auth_url, loginCallback
     
     def get_oauth(self):
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
-        refresh_url = 'https://accounts.spotify.com/api/token'
     
         def save_token(token):
             self.token = token
             self.save()
 
-        oauth = OAuth2Session(client_id, token=self.token, auto_refresh_url=refresh_url,
+        oauth = OAuth2Session(client_id, token=self.token, auto_refresh_url=self.token_url,
             auto_refresh_kwargs=dict(client_id=client_id, client_secret=client_secret), token_updater=save_token)
         return oauth
 
