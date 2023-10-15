@@ -1,3 +1,4 @@
+from .models import Song
 
 class MusicBackend:
     def login(user):
@@ -9,5 +10,5 @@ class MusicBackend:
     def pause():
         pass
 
-    def currentState() -> (Song, int):
+    def currentState() -> (Song, int, int):
         pass
