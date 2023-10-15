@@ -111,3 +111,19 @@ class SpotifyBackend(MusicBackend):
         
 
         pass
+
+    def search_spotify(self, query, token, type="track", limit=10):
+        base_url = "https://api.spotify.com/v1/search"
+        
+        params = {
+            "q": query,
+            "type": type,
+            "limit": limit
+        }
+        
+        response = self.oauth.get(base_url, params=params)
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            response.raise_for_status()
