@@ -70,12 +70,8 @@ class SpotifyBackend(MusicBackend):
         }
         response = requests.put(api_url, json=request_body)
         status_code = response.status_code()
-        if status_code == 403:
-            # Bad OAuth request
-            raise RuntimeError("Bad OAuth request")
-        elif status_code == 429:
-            # The app has exceeded its rate limits.
-            raise RuntimeError("The app has exceeded its rate limits.")
+        if status_code != 200:
+            response.raise_for_status()
         
 
     # Pauses the current song in play.
@@ -83,12 +79,8 @@ class SpotifyBackend(MusicBackend):
         api_url = "https://api.spotify.com/v1/me/player/pause"
         response = requests.put(api_url)
         status_code = response.status_code()
-        if status_code == 403:
-            # Bad OAuth request
-            raise RuntimeError("Bad OAuth request")
-        elif status_code == 429:
-            # The app has exceeded its rate limits.
-            raise RuntimeError("The app has exceeded its rate limits.")
+        if status_code != 200:
+            response.raise_for_status()
 
     # Get Playback state returns -> (song, curr_pos, duration)
     def currentState(self) -> (Song, int, int):
@@ -103,12 +95,8 @@ class SpotifyBackend(MusicBackend):
             duration_ms = int(json["item"]["duration_ms"])
             song = SpotifySong.objects.filter(spotify_id=json['item']['id'])
             return (song, curr_pos_ms, duration_ms)
-        elif status_code == 403:
-            # Bad OAuth request
-            raise RuntimeError("Bad OAuth request")
         else:
-            # The app has exceeded its rate limits.
-            raise RuntimeError("The app has exceeded its rate limits.")
+            response.raise_for_status()
 
     
     # Looks up for song in SpotifySong database.
@@ -129,16 +117,12 @@ class SpotifyBackend(MusicBackend):
         params = {"q": {"artist": artist, "track": track}}
         response = self.oauth.get(api_url, params=params)
         status_code = response.status_code()
-        if status_code == 403:
-            # Bad OAuth request
-            raise RuntimeError("Bad OAuth request")
-        elif status_code == 429:
-            # The app has exceeded its rate limits.
-            raise RuntimeError("The app has exceeded its rate limits.")
-        elif status_code == 200:
+        if status_code == 200:
             json = response.json()
             if json['tracks']['total'] > 0:
                 return SpotifySong.objects.create(song=song, spotify_id=json['tracks']['items']['id'])
+        else:
+            response.raise_for_status()
 
         return None
 
@@ -154,7 +138,7 @@ class SpotifyBackend(MusicBackend):
         response = self.oauth.get(base_url, params=params)
 
         if response.status_code == 200:
-            return response.json()
+            return response.json()    # return everything?
         else:
             response.raise_for_status()
 
