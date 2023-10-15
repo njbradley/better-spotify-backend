@@ -57,15 +57,22 @@ class SpotifyBackend(MusicBackend):
         self.oauth = self.get_oauth()
     
     def get_oauth(self):
+        print ('gettting oath')
+        print ('ksdjflskdjfls')
+        print (self.token)
         client_id = os.environ['CLIENT_ID']
         client_secret = os.environ['CLIENT_SECRET']
     
         def save_token(token):
+            print ('saving token')
+            print (token)
             self.token = token
             self.save()
 
         oauth = OAuth2Session(client_id, token=self.token, auto_refresh_url=self.token_url,
             auto_refresh_kwargs=dict(client_id=client_id, client_secret=client_secret), token_updater=save_token)
+        #token = oauth.refresh_token(self.token_url, client_id=client_id, client_secret=client_secret)
+        #save_token(token)
         return oauth
 
     # Plays "song" in spotify from "time" ms.
@@ -77,7 +84,7 @@ class SpotifyBackend(MusicBackend):
             "uris": uri,
             "position_ms": start_time
         }
-        response = requests.put(api_url, json=request_body)
+        response = self.oauth.put(api_url, json=request_body)
         status_code = response.status_code()
         if status_code != 200:
             response.raise_for_status()
@@ -86,8 +93,8 @@ class SpotifyBackend(MusicBackend):
     # Pauses the current song in play.
     def pause(self):
         api_url = "https://api.spotify.com/v1/me/player/pause"
-        response = requests.put(api_url)
-        status_code = response.status_code()
+        response = self.oauth.put(api_url)
+        status_code = response.status_code
         if status_code != 200:
             response.raise_for_status()
 
@@ -95,7 +102,7 @@ class SpotifyBackend(MusicBackend):
     def currentState(self) -> (Song, int, int):
         api_url = "https://api.spotify.com/v1/me/player/currently-playing"
 
-        response = requests.get(api_url)
+        response = self.oauth.get(api_url)
         status_code = response.status_code
         if response.status_code == 200:
             # Device currently active
@@ -123,7 +130,7 @@ class SpotifyBackend(MusicBackend):
         artist = song.artist
         track = song.name
         api_url = "https://api.spotify.com/v1/search"
-        params = {"q": {"artist": artist, "track": track}}
+        #params = {"q": {"artist": artist, "track": track}}
         print (params)
         response = self.oauth.get(api_url, params=params)
         status_code = response.status_code

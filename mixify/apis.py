@@ -27,6 +27,7 @@ def play(request):
 @api_view(http_method_names=['PUT'])
 def pause(request):
   request.user.getMusicBackend().pause()
+  return RestResponse({"status": "success"})
 
 @api_view(http_method_names=['GET'])
 def status(request):
