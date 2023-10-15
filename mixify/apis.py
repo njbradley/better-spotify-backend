@@ -20,6 +20,7 @@ def play(request):
   # request.playback is timing
   id = request.data["song"]
   pos = request.data["position"]
+  print (id)
   song = Song.objects.get(uid = id)
   backend.play(song, pos)
   return RestResponse({"status": "success"})
@@ -31,7 +32,8 @@ def pause(request):
 
 @api_view(http_method_names=['GET'])
 def status(request):
-  return 
+  song, curpos, duration = request.user.getMusicBackend().currentState()
+  return RestResponse({"song": song.uid, "position": curpos, "duration": duration})
 
 
 def create_tag(request):

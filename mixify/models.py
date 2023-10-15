@@ -20,6 +20,7 @@ class Song(models.Model):
     uid = models.CharField(max_length=127)
     name = models.CharField(max_length=127)
     artist = models.CharField(max_length=127)
+    album_art = models.URLField(max_length=255, null=True)
 
 class Tag(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -33,16 +34,22 @@ class TaggedSong(models.Model):
 class MusicBackend(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
-    def login(user):
-        pass
-
     def play(song: Song, start_time: int):
         pass
 
     def pause():
         pass
 
-    def currentState() -> (Song, int):
+    def currentState() -> (Song, int, int):
+        pass
+
+    def search():
+        pass
+
+    def listPlaylists():
+        pass
+
+    def importPlaylist():
         pass
     
     class Meta:

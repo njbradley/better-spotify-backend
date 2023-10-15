@@ -81,12 +81,12 @@ class SpotifyBackend(MusicBackend):
         api_url = "https://api.spotify.com/v1/me/player/play"
         uri = "spotify:track:" + self.lookupSong(song).spotify_id
         request_body = {
-            "uris": uri,
+            "uris": [uri],
             "position_ms": start_time
         }
         response = self.oauth.put(api_url, json=request_body)
-        status_code = response.status_code()
-        if status_code != 200:
+        status_code = response.status_code
+        if status_code != 204:
             response.raise_for_status()
         
 
@@ -95,7 +95,7 @@ class SpotifyBackend(MusicBackend):
         api_url = "https://api.spotify.com/v1/me/player/pause"
         response = self.oauth.put(api_url)
         status_code = response.status_code
-        if status_code != 200:
+        if status_code != 204:
             response.raise_for_status()
 
     # Get Playback state returns -> (song, curr_pos, duration)
@@ -109,8 +109,8 @@ class SpotifyBackend(MusicBackend):
             json = response.json()
             curr_pos_ms = int(json["progress_ms"])
             duration_ms = int(json["item"]["duration_ms"])
-            song = SpotifySong.objects.filter(spotify_id=json['item']['id'])
-            return (song, curr_pos_ms, duration_ms)
+            spotify_song = SpotifySong.objects.get(spotify_id=json['item']['id'])
+            return (spotify_song.song, curr_pos_ms, duration_ms)
         else:
             response.raise_for_status()
 
@@ -131,6 +131,7 @@ class SpotifyBackend(MusicBackend):
         track = song.name
         api_url = "https://api.spotify.com/v1/search"
         #params = {"q": {"artist": artist, "track": track}}
+        params = {"q": artist + ' ' + track, 'type': 'track'}
         print (params)
         response = self.oauth.get(api_url, params=params)
         status_code = response.status_code
@@ -140,11 +141,32 @@ class SpotifyBackend(MusicBackend):
             json = response.json()
             print (json)
             if json['tracks']['total'] > 0:
-                return SpotifySong.objects.create(song=song, spotify_id=json['tracks']['items']['id'])
+                tracks = json['tracks']['items']
+                spotify_id = tracks[0]['id']
+                print (tracks)
+                print (spotify_id)
+                return SpotifySong.objects.create(song=song, spotify_id=spotify_id)
         else:
             response.raise_for_status()
 
         return None
+
+    def reverseLookupSong(spotify_id, name, artist, album_art=None):
+        query = SpotifySong.objects.filter(spotify_id=spotify_id)
+        if query.count() > 0:
+            return query[0].song
+
+        query = Song.objects.filter(name=name, artist=artist)
+        if query.count() > 0:
+            spotifySong = SpotifySong(song=query[0], spotify_id=spotify_id)
+            spotifySong.save()
+            return spotifySong.song
+
+        song = Song(uid=name+'__'+artist, name=name, artist=artist)
+        song.save()
+        spotifySong = SpotifySong(song=song, spotify_id=spotify_id)
+        spotifySong.save()
+        return song
 
     def search_spotify(self, query, token, type="track", limit=10):
         base_url = "https://api.spotify.com/v1/search"
