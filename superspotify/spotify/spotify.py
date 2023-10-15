@@ -87,6 +87,7 @@ class SpotifyBackend(MusicBackend):
     # Get Playback state returns -> (song, curr_pos, duration)
     def currentState(self) -> (Song, int, int):
         api_url = "https://api.spotify.com/v1/me/player/currently-playing"
+
         response = requests.get(api_url)
         if response.status_code == 200:
             # Device currently active
@@ -108,8 +109,12 @@ class SpotifyBackend(MusicBackend):
         if query.size() > 0:
             return query[0]
         
-        # lookup from spotify api, fun
-        
+        # lookup from spotify api if have name alternative, fun
+        api_url = "https://api.spotify.com/v1/search"
+        params = {"q": {"artist": song.artist, "track": song.name}}
+        response = self.oauth.get(api_url, params=params)
+        status_code = response.status_code()
+
 
         pass
 
